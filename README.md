@@ -157,11 +157,6 @@ items_sold_to_customer_last_6_months()
 - PostgreSQL 12+
 - Установленный PostgreSQL сервер
 
-### **Установка зависимостей:**
-```bash
-pip install sqlalchemy psycopg2-binary
-```
-
 ### **Настройка PostgreSQL:**
 Убедитесь, что PostgreSQL запущен и доступен с параметрами:
 - Host: `localhost`
