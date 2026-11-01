@@ -1,14 +1,19 @@
 import sys
 
-from src.db_setup import *
-from src.db_func import *
+from sqlalchemy import text
 
-database_name = "inventory_db"
-User = "postgres"
-Password = "admin"
-Host = "localhost"
-Port = "5432"
-DB_url = f"postgresql+psycopg2://{User}:{Password}@{Host}:{Port}/{database_name}"
+from src.config import DB_NAME, DB_USER, DB_HOST, DB_PORT, require_db_password
+from src.db_setup import setup_database
+from src.db_func import (
+    product_information, sort_by_price, average_price,
+    products_by_price_range, products_by_manufacturer,
+    products_by_release_date, products_by_sale_date_range,
+    avg_price_by_sale_period, defective_items_by_manufacturer,
+    items_sold_to_customer_last_6_months,
+)
+
+database_name = DB_NAME
+User, Password, Host, Port = DB_USER, require_db_password(), DB_HOST, DB_PORT
 Engine = setup_database(database_name, User, Password, Host, Port)
 try:
     with Engine.connect() as conn:
