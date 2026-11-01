@@ -47,54 +47,18 @@ product_details
  └── product_id → products.product_id
 ```
 
-## Getting started
+## Run locally
 
-### 1. Prerequisites
+Requires **Python 3.10+** and a running **PostgreSQL** server. Copy `.env.example` to `.env` and enter your local database credentials.
 
-Install **Python 3.10+** and **PostgreSQL**. Start your PostgreSQL server. Your development PostgreSQL user must be allowed to create a database if `inventory_db` does not yet exist.
-
-### 2. Install
+From the project root:
 
 ```bash
-git clone https://github.com/marinaerokhina/garden_inventory.git
-cd garden_inventory
-python -m venv .venv
-```
-
-Activate the environment:
-
-- Windows PowerShell: `.venv\Scripts\Activate.ps1`
-- macOS / Linux: `source .venv/bin/activate`
-
-Then:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-### 3. Configure PostgreSQL
-
-Copy `.env.example` to `.env` (in the repository root) and fill in your **own local** PostgreSQL credentials:
-
-```dotenv
-DB_NAME=inventory_db
-DB_USER=postgres
-DB_PASSWORD=your-local-password
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-**Never commit the real `.env` file.** It is excluded by `.gitignore`. If you change the database name or user, adjust the values to match your PostgreSQL installation.
-
-### 4. Run
-
-From the **repository root**:
-
-```bash
+pip install -r requirements.txt
 python -m src.main
 ```
 
-On first initialization, the application creates the development database if needed, creates missing tables, and inserts synthetic sample records. Select a menu option from 1 to 10 to run a query or report.
+On first run, the application creates its development database and sample data. Your PostgreSQL user needs permission to create a database.
 
 ## Project structure
 
