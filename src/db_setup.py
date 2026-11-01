@@ -2,10 +2,11 @@ from datetime import datetime, timedelta
 import random as rand
 
 import psycopg2
+from psycopg2 import sql
 from sqlalchemy import create_engine, text, MetaData, Table, Column, Integer, \
     String, Float, Boolean, Date, ForeignKey, inspect
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.engine import URL
 
 """
     Cоздает базу данных, если таковая не существует
@@ -15,32 +16,39 @@ from sqlalchemy.orm import declarative_base
 """
 
 
-def create_db_if_not_exist(db_name, user='postgres', password='admin', host='localhost', port='5432'):
-    db_url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/postgres"
-    engine = create_engine(
-        url=db_url,
-        echo=False
+def create_db_if_not_exist(db_name, user, password, host='localhost', port='5432'):
+    """Create the local PostgreSQL database if it does not exist."""
+    admin_url = URL.create(
+        "postgresql+psycopg2",
+        username=user, password=password, host=host, port=int(port),
+        database="postgres",
     )
-    exists = False
-    with engine.connect() as conn:
-        result = conn.execute(text(f"SELECT EXISTS(SELECT FROM pg_database WHERE datname = '{db_name}')"))
-        exists = result.scalar()
-    if not exists:
-        conn = psycopg2.connect(
-            dbname='postgres',
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = conn.cursor()
-        cursor.execute(f'CREATE DATABASE "{db_name}"')
-        cursor.close()
-        conn.close()
-        print("Database created")
-    else:
+    admin_engine = create_engine(admin_url, echo=False)
+    try:
+        with admin_engine.connect() as conn:
+            exists = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                {"name": db_name},
+            ).scalar() is not None
+    finally:
+        admin_engine.dispose()
+
+    if exists:
         print("Database already exists")
+        return
+
+    conn = psycopg2.connect(
+        dbname="postgres", user=user, password=password, host=host, port=port,
+    )
+    try:
+        conn.autocommit = True  # CREATE DATABASE cannot run in a transaction
+        with conn.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name))
+            )
+        print("Database created")
+    finally:
+        conn.close()
 
 
 def create_tables_if_not_exist(engine):
@@ -322,20 +330,16 @@ def fill_database_with_test_data(engine):
         print("Database populated successfully with test data")
 
 
-def setup_database(db_name, user='postgres', password='admin', host='localhost', port='5432'):
-    """Полная настройка базы данных: создание БД, таблиц и заполнение данными"""
-    # Создаем базу данных, если не существует
-    db_exists = create_db_if_not_exist(db_name, user, password, host, port)
-
-    # Подключаемся к базе данных
-    db_url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
-    engine = create_engine(url=db_url, echo=False)
-
-    # Создаем таблицы, если не существуют
+def setup_database(db_name, user, password, host='localhost', port='5432'):
+    """Create the database and schema, and populate a new schema with sample data."""
+    create_db_if_not_exist(db_name, user, password, host, port)
+    db_url = URL.create(
+        "postgresql+psycopg2",
+        username=user, password=password, host=host, port=int(port),
+        database=db_name,
+    )
+    engine = create_engine(db_url, echo=False)
     tables_exist = create_tables_if_not_exist(engine)
-
-    # Заполняем данными, если таблицы были созданы
     if not tables_exist:
         fill_database_with_test_data(engine)
-
     return engine
