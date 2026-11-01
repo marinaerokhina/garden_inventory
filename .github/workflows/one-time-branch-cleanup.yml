@@ -1,0 +1,27 @@
+name: One-time cleanup of merged branches
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-branch-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete only verified merged branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          branch='portfolio-improvements-2026-11'
+          [[ "$branch" != 'main' ]] || exit 1
+          sha=$(gh api "repos/$REPO/git/ref/heads/$branch" --jq '.object.sha')
+          ahead=$(gh api "repos/$REPO/compare/main...$sha" --jq '.ahead_by')
+          test "$ahead" = 0
+          gh api -X DELETE "repos/$REPO/git/refs/heads/$branch"
+          echo "Deleted merged branch: $branch"
