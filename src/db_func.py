@@ -4,10 +4,9 @@ import sys
 
 
 def get_engine():
-    """Получить подключение к базе данных в зависимости от роли пользователя"""
-    # В реальном проекте здесь должна быть логика определения роли пользователя
-    # Для примера использую стандартные настройки
-    return create_engine("postgresql+psycopg2://postgres:admin@localhost:5432/inventory_db")
+    """Create a connection engine using the local environment configuration."""
+    from src.config import database_url
+    return create_engine(database_url())
 
 
 def product_information():
